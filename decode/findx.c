@@ -6,130 +6,15 @@
 #include <stdlib.h>
 #include <string.h>
 
-char	write_flag = 0;
-
-void parseUnsignedShort(unsigned short num, char* buffer) {
-	for (int i = 0; i < 16; i++) {
-		buffer[i] = num & 1 ? 1 : 0; // 取出最低位的值，转成字符存入数组
-		num >>= 1; // 将 num 右移一位，去掉最低位
-	}
-}
-
-int btd(char *a, int length)
-{
-	int res=0;
-	for (int i = 0; i <length ; i++)
-	{
-		res += a[i]*pow(2,i);
-		//printf("%d ", a[i]);
-	}
-	return res;
-}
-
-int r_altitude(char a[4][3073],char i)
-{	
-	int	res=0;
-	//for (size_t i = 0; i < 4; i++)
-	//{
-		res = btd(&a[i][1176], 11);
-		if (a[i][1187] == 0)
-		{
-			return res*2;
-		}
-		else
-		{
-			return	(res - pow(2, 11))*2;
-		}
-		//printf("%d\n", res);
-	//}
-}
-
-int fuelflow1(char a[4][3073],char i)
-{
-	int	res = 0;
-	//for (size_t i = 0; i < 4; i++)
-	//{
-		res = btd(&a[i][1440], 11) * 4;
-		
-		return res;
-		
-	//}
-}
-
-int fuelflow2(char a[4][3073],char i)
-{
-	int	res = 0;
-	//for (size_t i = 0; i < 4; i++)
-	//{
-		res = btd(&a[i][2976], 11) * 4;
-
-		return res;
-
-	//}
-}
-
-int airspeed(char a[4][3073],char i)
-{
-	int	res = 0;
-	
-	//for (size_t i = 0; i < 4; i++)
-	//{
-		res = btd(&a[i][432], 11)/2;
-
-		return res;
-
-	//}
-	
-}
-
-int temperature(char a[4][3073])
-{
-	double	res = 0.0;
-	for (size_t i = 1; i < 4; i+=2)
-	{
-		res = btd(&a[i][2376], 12)*0.06253;
-		if (a[i][2387]==0)
-		{
-			printf("%.2f  ", res);
-		}
-		else
-		{
-			printf("null");
-		}
-		//printf("%d\n", res);
-	}
-}
-
-void time(char a[4][3073])
-{
-	int	res = 0;
-	for (size_t i = 0; i < 4; i++)
-	{
-		res = btd(&a[i][24], 6);
-
-		printf("%d  ", res);
-
-	}
-}
 
 
-//专用打印器
-void printer(char a[4][3073])
-{
-	int	i, j;
-	for (i = 0; i < 4; i++)
-	{
-		for (j = 0; j < 3072; j++)
-		{
-			printf("%d", a[i][j]);
-		}
-		printf("\n\n");
-	}
-	printf("\n\n\n");
-}
+
 
 int main()
 {
+	char	write_flag = 0;
+	int FLEN;
+
     unsigned short buff = 0;
     unsigned short buff2 = 0;
     unsigned short tail = 0;
@@ -139,13 +24,13 @@ int main()
     unsigned short target3 = 0x0a47;
     unsigned short target4 = 0x0db8;
     unsigned char  flag = 0;
-	char frametest[12] = { 1,0,0,1,0,0,1,1,0,1,1,1 };
-    int bits = 16;
+	int bits = 0;
+	int words = 1;
+	char subs[4] = { 0 };
     int bitlast = 0;
     long int temp_cur = 0;
-	char frame[4][3073], sbit;
-	unsigned short temp;
-	int	f1, f2, as, ra;
+	unsigned short frame[4][512];
+	
 	
 
     
@@ -158,20 +43,57 @@ int main()
     }
 
 	FILE* file2;
-	fopen_s(&file2, "30651214.csv", "w"); // 打开二进制文件
+	fopen_s(&file2, "30651214.csv", "w"); // 打开文件
 
 	if (file2 == NULL) {
 		printf("无法打开文件2。\n");
 		return 1;
 	}
 
+	char count_flag = 0;
+	int count = 0;
+	while (1)
+	{
+		fread(&buff, 2, 1, file);
+		for (int k = 15; k >= 0; k--)
+		{
+			wind = ((wind >> 1) & 0x7fff) | ((buff << k) & 0x8000);//移入1bit
+			if (count_flag == 1)
+			{
+				count++;
+				if ((wind & 0x0fff) == (target2 & 0x0fff))
+				{
+					if (count%768==0 && count<=6144)
+					{
+						FLEN = count/12;
+						count_flag = 2;
+						break;
+						
+					}
+				}
+				
+			}
+
+			if ((wind & 0x0fff) == (target1 & 0x0fff))
+			{
+				count_flag = 1;
+				count = 0;
+			}
+
+			
+		}
+		if (count_flag==2)
+		{
+			break;
+		}
+	}
+
     fseek(file, 0, SEEK_END);
     long long int size = ftell(file)/2;
     fseek(file, 0, SEEK_SET);
+	wind = 0;
 
-    fread(&buff, 2, 1, file);
-    wind = buff;
-    long long int ie = 0;
+	
 
     for (long long int i = 0; i < size; i++)
     {
@@ -183,46 +105,34 @@ int main()
             wind = ((wind >> 1) & 0x7fff) | ((buff << j) & 0x8000);//移入1bit
 			if (write_flag)
 			{
+				bits++;
+				if (bits==12)
+				{
+					frame[flag-1][words] = (wind & 0x0fff);
+					bits = 0;
+					words++;
+				}
 
-				if (write_flag == 1)
+				if (words==FLEN)
 				{
-					temp = (buff << j) & 0x8000;
-					if (temp != 0)
-					{
-						sbit = 1;
-						
-					}
-					else
-					{
-						sbit = 0;
-					}
-					frame[flag - 1][bits] = sbit;
-					//printf("%c", sbit);
-					bits++;
-				}
-				if (bits>=3072)
-				{
+					words = 1;
 					write_flag = 0;
-					bits = 16;
-					//frame[flag - 1][bits] = '\0';
-					//if (flag == 4)
-					//{	
+					if (subs[0]+subs[1]+subs[2]+subs[3]==4)
+					{
 						/*
-						这里进行解帧
-						
+							完成一主帧的同步，可在此处进行解析或保存数据
 						*/
-						//ie++;
-						ra = r_altitude(frame,flag-1);
-						f1 = fuelflow1(frame,flag-1);
-						f2 = fuelflow2(frame,flag-1);
-						//temperature(frame);
-						//printf("%d\n",btd(frametest, 12));
-						//time(frame);
-						as = airspeed(frame,flag-1);
-						fprintf(file2,"%d,%d,%d,%d\n",ra,f1,f2,as);
-						//printer(frame);//帧打印器，完成后请删除
-					//}
+						fprintf(file2, "%d,%d,%d%d%d%d\n", (frame[0][2] >> 6) & 0x003f, frame[0][2] & 0x003f, frame[0][164]&0x000f, (frame[1][164]>>8)&0x000f, (frame[1][164] >> 4) & 0x000f, frame[1][164] & 0x000f);
+						fprintf(file2, "%d,%d\n", (frame[1][2] >> 6) & 0x003f, frame[1][2] & 0x003f);
+						fprintf(file2, "%d,%d,%d%d\n", (frame[2][2] >> 6) & 0x003f, frame[2][2] & 0x003f, (frame[2][4] >> 8) & 0x000f, (frame[2][4] >> 4) & 0x000f);
+						fprintf(file2, "%d,%d\n", (frame[3][2] >> 6) & 0x003f, frame[3][2] & 0x003f);
+
+						//reset subframe flag
+						memset(subs, 0, 4);
+
+					}
 				}
+				
 			}
 			
             if ((wind & 0x0fff) == (target1 & 0x0fff))
@@ -230,17 +140,20 @@ int main()
                 //printf("%lld  %d\n", i, 1);
 				
                 temp_cur = ftell(file);
-                fseek(file, 380, SEEK_CUR);
+                fseek(file, FLEN * 12 / 8 - 4, SEEK_CUR);
                 fread(&tail, 2, 1, file);
                 fread(&buff2, 2, 1, file);
                 tail = ((tail >> (16-j)) & 0x7fff)  | (buff2 << j);
                 if ((tail & 0x0fff) == (target2 & 0x0fff))
                 {
                     //printf("%lld\n", i);
-                    
+					memset(subs, 0, 4);
 					write_flag = 1;
 					flag = 1;
-					parseUnsignedShort(wind, &frame[flag - 1][0]);
+					subs[0] = 1;
+					frame[0][0] = target1;
+					
+					
 					//printf("%d\n", flag);
                 }
                 fseek(file, temp_cur, SEEK_SET);
@@ -254,7 +167,7 @@ int main()
             {
 				
 				temp_cur = ftell(file);
-				fseek(file, 380, SEEK_CUR);
+				fseek(file, FLEN * 12 / 8 - 4, SEEK_CUR);
 				fread(&tail, 2, 1, file);
 				fread(&buff2, 2, 1, file);
 				tail = ((tail >> (16 - j)) & 0x7fff) | (buff2 << j);
@@ -263,7 +176,9 @@ int main()
 					//printf("%lld\n", i);
 					write_flag = 1;
 					flag = 2;
-					parseUnsignedShort(wind, &frame[flag - 1][0]);
+					subs[1] = 1;
+					frame[1][0] = target2;
+					
 					//printf("%d\n", flag);
 				}
 				fseek(file, temp_cur, SEEK_SET);
@@ -273,7 +188,7 @@ int main()
             {
 				
 				temp_cur = ftell(file);
-				fseek(file, 380, SEEK_CUR);
+				fseek(file, FLEN * 12 / 8 - 4, SEEK_CUR);
 				fread(&tail, 2, 1, file);
 				fread(&buff2, 2, 1, file);
 				tail = ((tail >> (16 - j)) & 0x7fff) | (buff2 << j);
@@ -283,7 +198,9 @@ int main()
 					
 					write_flag = 1;
 					flag = 3;
-					parseUnsignedShort(wind, &frame[flag - 1][0]);
+					subs[2] = 1;;
+					frame[2][0] = target3;
+					
 					//printf("%d\n", flag);
 				}
 				fseek(file, temp_cur, SEEK_SET);
@@ -293,7 +210,7 @@ int main()
             {
 				
 				temp_cur = ftell(file);
-				fseek(file, 380, SEEK_CUR);
+				fseek(file, FLEN * 12 / 8 - 4, SEEK_CUR);
 				fread(&tail, 2, 1, file);
 				fread(&buff2, 2, 1, file);
 				tail = ((tail >> (16 - j)) & 0x7fff) | (buff2 << j);
@@ -303,7 +220,9 @@ int main()
 					
 					write_flag = 1;
 					flag = 4;
-					parseUnsignedShort(wind, &frame[flag - 1][0]);
+					subs[3] = 1;;
+					frame[3][0] = target1;
+					
 					//printf("%d\n", flag);
 				}
 				fseek(file, temp_cur, SEEK_SET);

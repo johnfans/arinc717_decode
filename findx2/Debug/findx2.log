@@ -1,5 +1,0 @@
-﻿  findx.c
-C:\Users\johnfan\Desktop\自制软件\findx2\findx2\findx.c(23,23): warning C4244: “+=”: 从“double”转换到“int”，可能丢失数据
-C:\Users\johnfan\Desktop\自制软件\findx2\findx2\findx.c(41,31): warning C4244: “return”: 从“double”转换到“int”，可能丢失数据
-C:\Users\johnfan\Desktop\自制软件\findx2\findx2\findx.c(101): warning C4716: “temperature”: 必须返回一个值
-  findx2.vcxproj -> C:\Users\johnfan\Desktop\自制软件\findx2\Debug\findx2.exe

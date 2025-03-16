@@ -1,0 +1,8 @@
+﻿  findx.c
+C:\Users\johnfan\Desktop\自制软件\qardecode\findx2\findx.c(34,10): warning C4101: “f2”: 未引用的局部变量
+C:\Users\johnfan\Desktop\自制软件\qardecode\findx2\findx.c(34,6): warning C4101: “f1”: 未引用的局部变量
+C:\Users\johnfan\Desktop\自制软件\qardecode\findx2\findx.c(34,14): warning C4101: “as”: 未引用的局部变量
+C:\Users\johnfan\Desktop\自制软件\qardecode\findx2\findx.c(34,18): warning C4101: “ra”: 未引用的局部变量
+C:\Users\johnfan\Desktop\自制软件\qardecode\findx2\findx.c(32,7): warning C4101: “sbit”: 未引用的局部变量
+C:\Users\johnfan\Desktop\自制软件\qardecode\findx2\findx.c(33,17): warning C4101: “temp”: 未引用的局部变量
+  findx2.vcxproj -> C:\Users\johnfan\Desktop\自制软件\qardecode\Debug\findx2.exe
